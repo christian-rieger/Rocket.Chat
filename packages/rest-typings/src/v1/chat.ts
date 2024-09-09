@@ -202,7 +202,6 @@ const ChatMarkAsNotDoneMessageSchema = {
 
 export const isChatMarkAsNotDoneMessageProps = ajv.compile<ChatMarkAsNotDoneMessage>(ChatMarkAsNotDoneMessageSchema);
 
-
 type ChatPinMessage = {
 	messageId: IMessage['_id'];
 };

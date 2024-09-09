@@ -619,10 +619,7 @@ export type RoomsEndpoints = {
 	};
 
 	'/v1/rooms.markAllMessagesAsDone': {
-		POST: (params: {
-			roomId: IRoom['_id'];
-			userId: IUser['_id'];
-		}) => void;
+		POST: (params: { roomId: IRoom['_id']; userId: IUser['_id'] }) => void;
 	};
 
 	'/v1/rooms.createDiscussion': {
