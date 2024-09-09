@@ -197,7 +197,7 @@ jobs:
 
   build-prod:
     name: 📦 Meteor Build - official
-    needs: [tests-done, release-versions, packages-build]
+    needs: [release-versions, packages-build]
     if: (github.event_name == 'release' || github.ref == 'refs/heads/develop')
     runs-on: ubuntu-20.04
 
@@ -534,7 +534,7 @@ jobs:
   build-docker-preview:
     name: 🚢 Build Docker Image (preview)
     runs-on: ubuntu-20.04
-    needs: [build, checks, release-versions]
+    needs: [build, release-versions]
     if: github.event_name == 'release' || github.ref == 'refs/heads/develop'
     steps:
       - uses: actions/checkout@v4
