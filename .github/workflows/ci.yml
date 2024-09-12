@@ -565,7 +565,7 @@ jobs:
   docker-image-publish:
     name: 🚀 Publish Docker Image (main)
     runs-on: ubuntu-20.04
-    needs: [build-docker-gh, build-docker-preview, release-versions]
+    needs: [build-gh-docker, build-docker-preview, release-versions]
 
     strategy:
       matrix:
@@ -677,7 +677,7 @@ jobs:
   services-docker-image-publish:
     name: 🚀 Publish Docker Image (services)
     runs-on: ubuntu-20.04
-    needs: [build-docker-gh, release-versions]
+    needs: [build-gh-docker, release-versions]
 
     strategy:
       matrix:
