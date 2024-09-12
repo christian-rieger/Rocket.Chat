@@ -23,6 +23,7 @@ import { useNormalizedMessage } from '../../hooks/useNormalizedMessage';
 import { useOembedLayout } from '../../hooks/useOembedLayout';
 import { useSubscriptionFromMessageQuery } from '../../hooks/useSubscriptionFromMessageQuery';
 import UiKitMessageBlock from '../../uikit/UiKitMessageBlock';
+import MarkedAsDone from '../../content/marked-as-done/MarkedAsDone';
 
 type RoomMessageContentProps = {
 	message: IMessage;
@@ -90,6 +91,8 @@ const RoomMessageContent = ({ message, unread, all, mention, searchText }: RoomM
 			)}
 
 			{normalizedMessage.reactions && Object.keys(normalizedMessage.reactions).length && <Reactions message={normalizedMessage} />}
+			{/* Note: I would prefer showing this component only on public channels, but we have no access to the Room-object here. Thus, we have to do this check inside of the Component */}
+			<MarkedAsDone message={normalizedMessage} />
 
 			{chat && isThreadMainMessage(normalizedMessage) && (
 				<ThreadMetrics

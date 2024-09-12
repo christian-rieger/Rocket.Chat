@@ -41,6 +41,12 @@ export interface IMessagesModel extends IBaseModel<IMessage> {
 
 	findStarredByUserAtRoom(userId: IUser['_id'], roomId: IRoom['_id'], options?: FindOptions<IMessage>): FindPaginated<FindCursor<IMessage>>;
 
+	findMarkedAsDoneByUserAtRoom(
+		userId: IUser['_id'],
+		roomId: IRoom['_id'],
+		options?: FindOptions<IMessage>,
+	): FindPaginated<FindCursor<IMessage>>;
+
 	findPaginatedByRoomIdAndType(
 		roomId: IRoom['_id'],
 		type: IMessage['t'],
@@ -231,6 +237,7 @@ export interface IMessagesModel extends IBaseModel<IMessage> {
 	findOneByRoomIdAndMessageId(rid: string, messageId: string, options?: FindOptions<IMessage>): Promise<IMessage | null>;
 
 	updateUserStarById(_id: string, userId: string, starred?: boolean): Promise<UpdateResult>;
+	updateUserMarkedAsDoneById(_id: string, userId: string, markedAsDone?: boolean): Promise<UpdateResult>;
 	updateUsernameAndMessageOfMentionByIdAndOldUsername(
 		_id: string,
 		oldUsername: string,
@@ -258,6 +265,8 @@ export interface IMessagesModel extends IBaseModel<IMessage> {
 		ignoreThreads: boolean,
 		selectedMessageIds?: string[],
 	): Promise<number>;
+	markAllMessagesAsDoneByRoomIdAndUserId(rid: string, userId: string): Promise<UpdateResult | Document>;
+
 	findByIdPinnedTimestampLimitAndUsers(
 		rid: string,
 		ignorePinned: boolean,

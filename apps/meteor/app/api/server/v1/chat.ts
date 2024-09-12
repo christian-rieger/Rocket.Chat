@@ -22,7 +22,7 @@ import { MessageTypes } from '../../../ui-utils/server';
 import { normalizeMessagesForUser } from '../../../utils/server/lib/normalizeMessagesForUser';
 import { API } from '../api';
 import { getPaginationItems } from '../helpers/getPaginationItems';
-import { findDiscussionsFromRoom, findMentionedMessages, findStarredMessages } from '../lib/messages';
+import { findDiscussionsFromRoom, findMentionedMessages, findStarredMessages, findMarkedAsDoneMessages } from '../lib/messages';
 
 API.v1.addRoute(
 	'chat.delete',
@@ -251,6 +251,58 @@ API.v1.addRoute(
 				_id: msg._id,
 				rid: msg.rid,
 				starred: true,
+			});
+
+			return API.v1.success();
+		},
+	},
+);
+
+API.v1.addRoute(
+	'chat.markAsDoneMessage',
+	{ authRequired: true },
+	{
+		async post() {
+			if (!this.bodyParams.messageId?.trim()) {
+				throw new Meteor.Error('error-messageid-param-not-provided', 'The required "messageId" param is required.');
+			}
+
+			const msg = await Messages.findOneById(this.bodyParams.messageId);
+
+			if (!msg) {
+				throw new Meteor.Error('error-message-not-found', 'The provided "messageId" does not match any existing message.');
+			}
+
+			await Meteor.callAsync('markAsDoneMessage', {
+				_id: msg._id,
+				rid: msg.rid,
+				markedAsDone: true,
+			});
+
+			return API.v1.success();
+		},
+	},
+);
+
+API.v1.addRoute(
+	'chat.markAsNotDoneMessage',
+	{ authRequired: true },
+	{
+		async post() {
+			if (!this.bodyParams.messageId?.trim()) {
+				throw new Meteor.Error('error-messageid-param-not-provided', 'The required "messageId" param is required.');
+			}
+
+			const msg = await Messages.findOneById(this.bodyParams.messageId);
+
+			if (!msg) {
+				throw new Meteor.Error('error-message-not-found', 'The provided "messageId" does not match any existing message.');
+			}
+
+			await Meteor.callAsync('markAsDoneMessage', {
+				_id: msg._id,
+				rid: msg.rid,
+				markedAsDone: false,
 			});
 
 			return API.v1.success();
@@ -766,6 +818,35 @@ API.v1.addRoute(
 				throw new Meteor.Error('error-invalid-params', 'The required "roomId" query param is missing.');
 			}
 			const messages = await findStarredMessages({
+				uid: this.userId,
+				roomId,
+				pagination: {
+					offset,
+					count,
+					sort,
+				},
+			});
+
+			messages.messages = await normalizeMessagesForUser(messages.messages, this.userId);
+
+			return API.v1.success(messages);
+		},
+	},
+);
+
+API.v1.addRoute(
+	'chat.getMarkedAsDoneMessages',
+	{ authRequired: true },
+	{
+		async get() {
+			const { roomId } = this.queryParams;
+			const { sort } = await this.parseJsonQuery();
+			const { offset, count } = await getPaginationItems(this.queryParams);
+
+			if (!roomId) {
+				throw new Meteor.Error('error-invalid-params', 'The required "roomId" query param is missing.');
+			}
+			const messages = await findMarkedAsDoneMessages({
 				uid: this.userId,
 				roomId,
 				pagination: {

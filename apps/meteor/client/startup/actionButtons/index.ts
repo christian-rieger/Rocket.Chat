@@ -8,3 +8,5 @@ import './pinMessage';
 import './starMessage';
 import './unpinMessage';
 import './unstarMessage';
+import './markAsDoneMessage';
+import './markAsNotDoneMessage';

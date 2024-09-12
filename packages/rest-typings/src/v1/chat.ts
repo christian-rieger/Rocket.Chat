@@ -168,6 +168,40 @@ const ChatUnstarMessageSchema = {
 
 export const isChatUnstarMessageProps = ajv.compile<ChatUnstarMessage>(ChatUnstarMessageSchema);
 
+type ChatMarkAsDoneMessage = {
+	messageId: IMessage['_id'];
+};
+
+const ChatMarkAsDoneMessageSchema = {
+	type: 'object',
+	properties: {
+		messageId: {
+			type: 'string',
+		},
+	},
+	required: ['messageId'],
+	additionalProperties: false,
+};
+
+export const isChatMarkAsDoneMessageProps = ajv.compile<ChatMarkAsDoneMessage>(ChatMarkAsDoneMessageSchema);
+
+type ChatMarkAsNotDoneMessage = {
+	messageId: IMessage['_id'];
+};
+
+const ChatMarkAsNotDoneMessageSchema = {
+	type: 'object',
+	properties: {
+		messageId: {
+			type: 'string',
+		},
+	},
+	required: ['messageId'],
+	additionalProperties: false,
+};
+
+export const isChatMarkAsNotDoneMessageProps = ajv.compile<ChatMarkAsNotDoneMessage>(ChatMarkAsNotDoneMessageSchema);
+
 type ChatPinMessage = {
 	messageId: IMessage['_id'];
 };
@@ -525,6 +559,38 @@ const GetStarredMessagesSchema = {
 
 export const isChatGetStarredMessagesProps = ajv.compile<GetStarredMessages>(GetStarredMessagesSchema);
 
+type GetMarkedAsDoneMessages = {
+	roomId: IRoom['_id'];
+	count?: number;
+	offset?: number;
+	sort?: string;
+};
+
+const GetMarkedAsDoneMessagesSchema = {
+	type: 'object',
+	properties: {
+		roomId: {
+			type: 'string',
+		},
+		count: {
+			type: 'number',
+			nullable: true,
+		},
+		offset: {
+			type: 'number',
+			nullable: true,
+		},
+		sort: {
+			type: 'string',
+			nullable: true,
+		},
+	},
+	required: ['roomId'],
+	additionalProperties: false,
+};
+
+export const isChatGetMarkedAsDoneMessagesProps = ajv.compile<GetMarkedAsDoneMessages>(GetMarkedAsDoneMessagesSchema);
+
 type GetPinnedMessages = {
 	roomId: IRoom['_id'];
 	count?: number;
@@ -866,6 +932,12 @@ export type ChatEndpoints = {
 	'/v1/chat.unStarMessage': {
 		POST: (params: ChatUnstarMessage) => void;
 	};
+	'/v1/chat.markAsDoneMessage': {
+		POST: (params: ChatMarkAsDoneMessage) => void;
+	};
+	'/v1/chat.markAsNotDoneMessage': {
+		POST: (params: ChatMarkAsNotDoneMessage) => void;
+	};
 	'/v1/chat.pinMessage': {
 		POST: (params: ChatPinMessage) => {
 			message: IMessage;
@@ -925,6 +997,14 @@ export type ChatEndpoints = {
 	};
 	'/v1/chat.getStarredMessages': {
 		GET: (params: GetStarredMessages) => {
+			messages: IMessage[];
+			count: number;
+			offset: number;
+			total: number;
+		};
+	};
+	'/v1/chat.getMarkedAsDoneMessages': {
+		GET: (params: GetMarkedAsDoneMessages) => {
 			messages: IMessage[];
 			count: number;
 			offset: number;

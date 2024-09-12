@@ -118,6 +118,20 @@ export class MessagesRaw extends BaseRaw<IMessage> implements IMessagesModel {
 		return this.findPaginated(query, options);
 	}
 
+	findMarkedAsDoneByUserAtRoom(
+		userId: IUser['_id'],
+		roomId: IRoom['_id'],
+		options?: FindOptions<IMessage>,
+	): FindPaginated<FindCursor<IMessage>> {
+		const query: Filter<IMessage> = {
+			'_hidden': { $ne: true },
+			'markedAsDone._id': userId,
+			'rid': roomId,
+		};
+
+		return this.findPaginated(query, options);
+	}
+
 	findPaginatedByRoomIdAndType(
 		roomId: IRoom['_id'],
 		type: IMessage['t'],
@@ -1288,6 +1302,27 @@ export class MessagesRaw extends BaseRaw<IMessage> implements IMessagesModel {
 		return this.updateOne(query, update);
 	}
 
+	updateUserMarkedAsDoneById(_id: string, userId: string, markedAsDone?: boolean): Promise<UpdateResult> {
+		let update: UpdateFilter<IMessage>;
+		const query = { _id };
+
+		if (markedAsDone) {
+			update = {
+				$addToSet: {
+					markedAsDone: { _id: userId },
+				},
+			};
+		} else {
+			update = {
+				$pull: {
+					markedAsDone: { _id: userId },
+				},
+			};
+		}
+
+		return this.updateOne(query, update);
+	}
+
 	setMessageAttachments(_id: string, attachments: IMessage['attachments']): Promise<UpdateResult> {
 		const query = { _id };
 
@@ -1492,6 +1527,22 @@ export class MessagesRaw extends BaseRaw<IMessage> implements IMessagesModel {
 			).deletedCount - notCountedMessages;
 
 		return count;
+	}
+
+	markAllMessagesAsDoneByRoomIdAndUserId(rid: string, userId: string): Promise<UpdateResult | Document> {
+		return this.updateMany(
+			{
+				rid,
+				'_hidden': { $ne: true },
+				t: { $exists: false },
+				// 'markedAsDone._id': { $ne: userId },
+			},
+			{
+				$addToSet: {
+					markedAsDone: { _id: userId },
+				},
+			},
+		);
 	}
 
 	removeByUserId(userId: string): Promise<DeleteResult> {
