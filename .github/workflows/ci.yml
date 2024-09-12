@@ -225,34 +225,34 @@ jobs:
           node-version: ${{ needs.release-versions.outputs.node-version }}
           coverage: ${{ github.event_name != 'release' }}
 
-  build-gh-docker-coverage:
-    name: 🚢 Build Docker Images for Testing
-    needs: [build, release-versions]
-    runs-on: ubuntu-20.04
-
-    env:
-      RC_DOCKERFILE: ${{ matrix.platform == 'alpine' && needs.release-versions.outputs.rc-dockerfile-alpine || needs.release-versions.outputs.rc-dockerfile }}
-      RC_DOCKER_TAG: ${{ matrix.platform == 'alpine' && needs.release-versions.outputs.rc-docker-tag-alpine || needs.release-versions.outputs.rc-docker-tag }}
-      DOCKER_TAG: ${{ needs.release-versions.outputs.gh-docker-tag }}
-      LOWERCASE_REPOSITORY: ${{ needs.release-versions.outputs.lowercase-repo }}
-
-    strategy:
-      fail-fast: false
-      matrix:
-        platform: ['official', 'alpine']
-
-    steps:
-      - uses: actions/checkout@v4
-
-      # we only build and publish the actual docker images if not a PR from a fork
-      - uses: ./.github/actions/build-docker
-        if: (github.event.pull_request.head.repo.full_name == github.repository || github.event_name == 'release' || github.ref == 'refs/heads/develop')
-        with:
-          CR_USER: ${{ secrets.CR_USER }}
-          CR_PAT: ${{ secrets.CR_PAT }}
-          node-version: ${{ needs.release-versions.outputs.node-version }}
-          platform: ${{ matrix.platform }}
-          build-containers: ${{ matrix.platform == 'alpine' && 'authorization-service account-service ddp-streamer-service presence-service stream-hub-service queue-worker-service omnichannel-transcript-service' || '' }}
+#  build-gh-docker-coverage:
+#    name: 🚢 Build Docker Images for Testing
+#    needs: [build, release-versions]
+#    runs-on: ubuntu-20.04
+#
+#    env:
+#      RC_DOCKERFILE: ${{ matrix.platform == 'alpine' && needs.release-versions.outputs.rc-dockerfile-alpine || needs.release-versions.outputs.rc-dockerfile }}
+#      RC_DOCKER_TAG: ${{ matrix.platform == 'alpine' && needs.release-versions.outputs.rc-docker-tag-alpine || needs.release-versions.outputs.rc-docker-tag }}
+#      DOCKER_TAG: ${{ needs.release-versions.outputs.gh-docker-tag }}
+#      LOWERCASE_REPOSITORY: ${{ needs.release-versions.outputs.lowercase-repo }}
+#
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        platform: ['official', 'alpine']
+#
+#    steps:
+#      - uses: actions/checkout@v4
+#
+#      # we only build and publish the actual docker images if not a PR from a fork
+#      - uses: ./.github/actions/build-docker
+#        if: (github.event.pull_request.head.repo.full_name == github.repository || github.event_name == 'release' || github.ref == 'refs/heads/develop')
+#        with:
+#          CR_USER: ${{ secrets.CR_USER }}
+#          CR_PAT: ${{ secrets.CR_PAT }}
+#          node-version: ${{ needs.release-versions.outputs.node-version }}
+#          platform: ${{ matrix.platform }}
+#          build-containers: ${{ matrix.platform == 'alpine' && 'authorization-service account-service ddp-streamer-service presence-service stream-hub-service queue-worker-service omnichannel-transcript-service' || '' }}
 
   build-gh-docker:
     name: 🚢 Build Docker Images for Production
