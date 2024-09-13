@@ -264,7 +264,6 @@ jobs:
       RC_DOCKER_TAG: ${{ matrix.platform == 'alpine' && needs.release-versions.outputs.rc-docker-tag-alpine || needs.release-versions.outputs.rc-docker-tag }}
       DOCKER_TAG: ${{ needs.release-versions.outputs.gh-docker-tag }}
       LOWERCASE_REPOSITORY: ${{ needs.release-versions.outputs.lowercase-repo }}
-      CR_URL: ${{ secrets.CR_URL }}
 
     strategy:
       fail-fast: false
@@ -276,11 +275,12 @@ jobs:
 
       - uses: ./.github/actions/build-docker
         with:
-          
           node-version: ${{ needs.release-versions.outputs.node-version }}
           platform: ${{ matrix.platform }}
           build-containers: ${{ matrix.platform == 'alpine' && 'authorization-service account-service ddp-streamer-service presence-service stream-hub-service queue-worker-service omnichannel-transcript-service' || '' }}
-
+          CR_USER: ${{ secrets.CR_USER }}
+          CR_PAT: ${{ secrets.CR_PAT }}
+          CR_URL: ${{ secrets.CR_URL }}
       - name: Rename official Docker tag to GitHub Container Registry
         if: matrix.platform == 'official'
         run: |
@@ -576,14 +576,7 @@ jobs:
       IMAGE_NAME: 'rocketchat/rocket.chat'
 
     steps:
-      - name: Login to DockerHub
-        uses: docker/login-action@v2
-        with:
-          registry: ${{ secrets.CR_URL }}
-          username: ${{ secrets.DOCKER_USER }}
-          password: ${{ secrets.DOCKER_PASS }}
-
-      - name: Login to GitHub Container Registry
+      - name: Login to Nexus Container Registry
         uses: docker/login-action@v2
         with:
           registry: ${{ secrets.CR_URL }}
@@ -625,7 +618,7 @@ jobs:
 
           # tag and push the specific tag version
           docker tag ${{ steps.gh-docker.outputs.gh-image-name }} $IMAGE_NAME:$DOCKER_TAG
-          docker push $IMAGE_NAME:$DOCKER_TAG
+          docker push ${{ secrets.CR_URL }}/$IMAGE_NAME:$DOCKER_TAG
 
           PUBLISHED_TAGS+=("$IMAGE_NAME:$DOCKER_TAG")
 
@@ -641,13 +634,13 @@ jobs:
             if [[ $RELEASE == 'latest' ]]; then
               if [[ '${{ needs.release-versions.outputs.latest-release }}' == $GITHUB_REF_NAME ]]; then
                 docker tag ${{ steps.gh-docker.outputs.gh-image-name }} $IMAGE_NAME:$RELEASE
-                docker push $IMAGE_NAME:$RELEASE
+                docker push ${{ secrets.CR_URL }}/$IMAGE_NAME:$RELEASE
 
                 PUBLISHED_TAGS+=("$IMAGE_NAME:$RELEASE")
               fi
             else
               docker tag ${{ steps.gh-docker.outputs.gh-image-name }} $IMAGE_NAME:$RELEASE
-              docker push $IMAGE_NAME:$RELEASE
+              docker push ${{ secrets.CR_URL }}/$IMAGE_NAME:$RELEASE
 
               PUBLISHED_TAGS+=("$IMAGE_NAME:$RELEASE")
             fi
@@ -662,7 +655,7 @@ jobs:
           fi;
 
           docker tag ${{ steps.gh-docker.outputs.gh-image-name }} $IMAGE_NAME:$TAG_SHA
-          docker push $IMAGE_NAME:$TAG_SHA
+          docker push ${{ secrets.CR_URL }}/$IMAGE_NAME:$TAG_SHA
 
           PUBLISHED_TAGS+=("$IMAGE_NAME:$TAG_SHA")
 
@@ -684,13 +677,6 @@ jobs:
         service: ['account', 'authorization', 'ddp-streamer', 'omnichannel-transcript', 'presence', 'queue-worker', 'stream-hub']
 
     steps:
-      - name: Login to DockerHub
-        uses: docker/login-action@v2
-        with:
-          registry: ${{ secrets.CR_URL }}
-          username: ${{ secrets.DOCKER_USER }}
-          password: ${{ secrets.DOCKER_PASS }}
-
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v2
         with:
@@ -726,7 +712,7 @@ jobs:
 
           # tag and push the specific tag version
           docker tag ${{ steps.gh-docker.outputs.gh-image-name }} $DH_IMAGE_NAME:$DOCKER_TAG
-          docker push $DH_IMAGE_NAME:$DOCKER_TAG
+          docker push ${{ secrets.CR_URL }}/$DH_IMAGE_NAME:$DOCKER_TAG
 
           PUBLISHED_TAGS+=("$DH_IMAGE_NAME:$DOCKER_TAG")
 
@@ -736,13 +722,13 @@ jobs:
             if [[ $RELEASE == 'latest' ]]; then
               if [[ '${{ needs.release-versions.outputs.latest-release }}' == $GITHUB_REF_NAME ]]; then
                 docker tag ${{ steps.gh-docker.outputs.gh-image-name }} $DH_IMAGE_NAME:$RELEASE
-                docker push $DH_IMAGE_NAME:$RELEASE
+                docker push ${{ secrets.CR_URL }}/$DH_IMAGE_NAME:$RELEASE
 
                 PUBLISHED_TAGS+=("$DH_IMAGE_NAME:$RELEASE")
               fi
             else
               docker tag ${{ steps.gh-docker.outputs.gh-image-name }} $DH_IMAGE_NAME:$RELEASE
-              docker push $DH_IMAGE_NAME:$RELEASE
+              docker push ${{ secrets.CR_URL }}/$DH_IMAGE_NAME:$RELEASE
 
               PUBLISHED_TAGS+=("$DH_IMAGE_NAME:$RELEASE")
             fi
@@ -752,7 +738,7 @@ jobs:
           TAG_SHA="${{ steps.gh-docker.outputs.gh-docker-tag-sha }}"
 
           docker tag ${{ steps.gh-docker.outputs.gh-image-name }} $DH_IMAGE_NAME:$TAG_SHA
-          docker push $DH_IMAGE_NAME:$TAG_SHA
+          docker push ${{ secrets.CR_URL }}/$DH_IMAGE_NAME:$TAG_SHA
 
           PUBLISHED_TAGS+=("$DH_IMAGE_NAME:$TAG_SHA")
 
@@ -811,30 +797,30 @@ jobs:
           # Makes build fail if the release isn't there
           curl --fail https://releases.rocket.chat/$RC_VERSION/info
 
-  trigger-dependent-workflows:
-    runs-on: ubuntu-latest
-    if: github.event_name == 'release'
-    needs:
-      - services-docker-image-publish
-      - docker-image-publish
-    steps:
-      - name: Send context to seperate pipeline
-        uses: peter-evans/repository-dispatch@v2
-        with:
-          token: ${{ secrets.DISTRIBUTION_TOKEN }}
-          event-type: new_release
-          repository: RocketChat/Release.Distributions
-          client-payload: '{"tag": "${{ github.ref_name }}"}'
+#  trigger-dependent-workflows:
+#    runs-on: ubuntu-latest
+#    if: github.event_name == 'release'
+#    needs:
+#      - services-docker-image-publish
+#      - docker-image-publish
+#    steps:
+#      - name: Send context to seperate pipeline
+#        uses: peter-evans/repository-dispatch@v2
+#        with:
+#          token: ${{ secrets.DISTRIBUTION_TOKEN }}
+#          event-type: new_release
+#          repository: RocketChat/Release.Distributions
+#          client-payload: '{"tag": "${{ github.ref_name }}"}'
 
-  docs-update:
-    name: Update Version Durability
-
-    if: github.event_name == 'release'
-    needs:
-      - services-docker-image-publish
-      - docker-image-publish
-
-    uses: ./.github/workflows/update-version-durability.yml
-    secrets:
-      CI_PAT: ${{ secrets.CI_PAT }}
-      D360_TOKEN: ${{ secrets.D360_TOKEN }}
+#  docs-update:
+#    name: Update Version Durability
+#
+#    if: github.event_name == 'release'
+#    needs:
+#      - services-docker-image-publish
+#      - docker-image-publish
+#
+#    uses: ./.github/workflows/update-version-durability.yml
+#    secrets:
+#      CI_PAT: ${{ secrets.CI_PAT }}
+#      D360_TOKEN: ${{ secrets.D360_TOKEN }}
